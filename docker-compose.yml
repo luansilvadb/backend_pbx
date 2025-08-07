@@ -1,0 +1,47 @@
+# 🐳 Docker Compose - Backend PBX + FreeSWITCH
+version: '3.8'
+
+services:
+  # Backend PBX API
+  backend_pbx:
+    build: .
+    container_name: backend_pbx
+    ports:
+      - "8080:8080"
+    environment:
+      - APP__APP__ENVIRONMENT=docker
+      - APP__FREESWITCH__HOST=freeswitch
+      - APP__SERVER__HOST=0.0.0.0
+      - RUST_LOG=backend_pbx=info,tower_http=debug
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    depends_on:
+      - freeswitch
+    networks:
+      - pbx_network
+    restart: unless-stopped
+
+  # FreeSWITCH (opcional para desenvolvimento)
+  freeswitch:
+    image: freeswitch/freeswitch:latest
+    container_name: freeswitch
+    ports:
+      - "8021:8021"  # Event Socket
+      - "5060:5060/udp"  # SIP
+      - "5080:5080/udp"  # SIP (backup)
+      - "16384-16394:16384-16394/udp"  # RTP
+    volumes:
+      - ./freeswitch/conf:/usr/local/freeswitch/conf:ro
+      - freeswitch_logs:/usr/local/freeswitch/log
+      - freeswitch_db:/usr/local/freeswitch/db
+    networks:
+      - pbx_network
+    restart: unless-stopped
+
+networks:
+  pbx_network:
+    driver: bridge
+
+volumes:
+  freeswitch_logs:
+  freeswitch_db:

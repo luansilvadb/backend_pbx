@@ -1,0 +1,31 @@
+# 🔧 Backend PBX Configuration
+
+# Server configuration
+server:
+  host: "127.0.0.1"
+  port: 8080
+  
+# FreeSWITCH Event Socket configuration
+freeswitch:
+  host: "127.0.0.1"
+  port: 8021
+  password: "ClueCon"
+  timeout_seconds: 30
+  max_retries: 5
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "json"  # json, pretty, compact
+  
+# API configuration
+api:
+  cors_origins: ["*"]
+  rate_limit_requests_per_minute: 100
+  request_timeout_seconds: 30
+
+# Application settings
+app:
+  name: "Backend PBX"
+  version: "0.2.0"
+  environment: "development"  # development, production

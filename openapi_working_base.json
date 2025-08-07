@@ -1,0 +1,907 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Backend PBX API",
+    "description": "API REST para controle de chamadas VoIP via FreeSWITCH com suporte multi-tenant",
+    "contact": {
+      "name": "Backend PBX",
+      "email": "contato@backendpbx.com"
+    },
+    "license": {
+      "name": ""
+    },
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/api/tenants": {
+      "get": {
+        "tags": ["tenants"],
+        "summary": "Lista todos os tenants com paginação",
+        "responses": {
+          "200": {
+            "description": "Lista de tenants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tenants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TenantSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["tenants"],
+        "summary": "Cria novo tenant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tenant criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "$ref": "#/components/schemas/TenantStatus"
+                    },
+                    "service_plan": {
+                      "$ref": "#/components/schemas/ServicePlan"
+                    },
+                    "limits": {
+                      "$ref": "#/components/schemas/TenantLimits"
+                    },
+                    "config": {
+                      "$ref": "#/components/schemas/TenantConfig"
+                    },
+                    "contact": {
+                      "$ref": "#/components/schemas/TenantContact"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tenant já existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/validate/{tenant_id}": {
+      "get": {
+        "tags": ["tenants"],
+        "summary": "Valida se um tenant ID existe",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}": {
+      "get": {
+        "tags": ["tenants"],
+        "summary": "Obtém detalhes de um tenant específico",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "$ref": "#/components/schemas/TenantStatus"
+                    },
+                    "service_plan": {
+                      "$ref": "#/components/schemas/ServicePlan"
+                    },
+                    "limits": {
+                      "$ref": "#/components/schemas/TenantLimits"
+                    },
+                    "config": {
+                      "$ref": "#/components/schemas/TenantConfig"
+                    },
+                    "contact": {
+                      "$ref": "#/components/schemas/TenantContact"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["tenants"],
+        "summary": "Atualiza um tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tenant atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "$ref": "#/components/schemas/TenantStatus"
+                    },
+                    "service_plan": {
+                      "$ref": "#/components/schemas/ServicePlan"
+                    },
+                    "limits": {
+                      "$ref": "#/components/schemas/TenantLimits"
+                    },
+                    "config": {
+                      "$ref": "#/components/schemas/TenantConfig"
+                    },
+                    "contact": {
+                      "$ref": "#/components/schemas/TenantContact"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["tenants"],
+        "summary": "Remove um tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/health": {
+      "get": {
+        "tags": ["tenants"],
+        "summary": "Obtém status de saúde do tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/stats": {
+      "get": {
+        "tags": ["tenants"],
+        "summary": "Obtém estatísticas detalhadas do tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/status": {
+      "post": {
+        "tags": ["tenants"],
+        "summary": "Altera status do tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "$ref": "#/components/schemas/TenantStatus"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status do tenant alterado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "$ref": "#/components/schemas/TenantStatus"
+                    },
+                    "service_plan": {
+                      "$ref": "#/components/schemas/ServicePlan"
+                    },
+                    "limits": {
+                      "$ref": "#/components/schemas/TenantLimits"
+                    },
+                    "config": {
+                      "$ref": "#/components/schemas/TenantConfig"
+                    },
+                    "contact": {
+                      "$ref": "#/components/schemas/TenantContact"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/usage": {
+      "get": {
+        "tags": ["tenants"],
+        "summary": "Obtém estatísticas de uso do tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estatísticas de uso do tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "costs": {
+                      "$ref": "#/components/schemas/UsageCosts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users": {
+      "post": {
+        "tags": ["sip-users"],
+        "summary": "Cria novo usuário SIP no tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Extensão já existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "description": "Response de erro padronizada da API",
+        "required": ["error_code", "message", "timestamp"],
+        "properties": {
+          "error_code": {
+            "type": "string",
+            "description": "Código do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem de erro"
+          },
+          "details": {
+            "type": "string",
+            "description": "Detalhes adicionais (opcional)",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp do erro"
+          }
+        }
+      },
+      "CreateTenantRequest": {
+        "type": "object",
+        "description": "Request para criar novo tenant",
+        "required": ["id", "name", "service_plan", "sip_domain", "contact"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID do tenant (deve ser único)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome de exibição"
+          },
+          "service_plan": {
+            "$ref": "#/components/schemas/ServicePlan"
+          },
+          "sip_domain": {
+            "type": "string",
+            "description": "Domínio SIP"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/TenantContact"
+          }
+        }
+      },
+      "UpdateTenantRequest": {
+        "type": "object",
+        "description": "Request para atualizar tenant",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome de exibição"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          },
+          "service_plan": {
+            "$ref": "#/components/schemas/ServicePlan"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/TenantLimits"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/TenantContact"
+          }
+        }
+      },
+      "TenantConfig": {
+        "type": "object",
+        "description": "Configurações específicas do tenant",
+        "required": ["sip_domain", "default_context", "recording_policy", "presence_enabled", "timezone"],
+        "properties": {
+          "sip_domain": {
+            "type": "string",
+            "description": "Domínio SIP principal"
+          },
+          "default_context": {
+            "type": "string",
+            "description": "Context padrão no dialplan"
+          },
+          "default_gateway": {
+            "type": "string",
+            "description": "Gateway padrão para chamadas externas",
+            "nullable": true
+          },
+          "recording_policy": {
+            "type": "string",
+            "enum": ["never", "always", "external_only", "internal_only", "on_demand"],
+            "description": "Política de gravação padrão"
+          },
+          "presence_enabled": {
+            "type": "boolean",
+            "description": "Configurações de presença"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Timezone do tenant"
+          }
+        }
+      },
+      "TenantContact": {
+        "type": "object",
+        "description": "Informações de contato do tenant",
+        "required": ["company_name", "contact_name", "email", "phone", "country"],
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "description": "Nome da empresa/organização"
+          },
+          "contact_name": {
+            "type": "string",
+            "description": "Nome do contato principal"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email principal"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefone principal"
+          },
+          "address": {
+            "type": "string",
+            "description": "Endereço",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "description": "Cidade",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "description": "Estado",
+            "nullable": true
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "CEP",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "description": "País"
+          }
+        }
+      },
+      "TenantLimits": {
+        "type": "object",
+        "description": "Limites de recursos por tenant",
+        "required": ["max_concurrent_calls", "max_extensions", "max_monthly_minutes", "max_recording_storage_mb", "max_conferences", "max_queues", "max_calls_per_minute"],
+        "properties": {
+          "max_concurrent_calls": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Máximo de chamadas simultâneas"
+          },
+          "max_extensions": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Máximo de ramais/extensões"
+          },
+          "max_monthly_minutes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Minutos máximos por mês"
+          },
+          "max_recording_storage_mb": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Espaço máximo para gravações (MB)"
+          },
+          "max_conferences": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Máximo de conferências simultâneas"
+          },
+          "max_queues": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Máximo de filas de atendimento"
+          },
+          "max_calls_per_minute": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Taxa máxima de chamadas por minuto (rate limiting)"
+          }
+        }
+      },
+      "ServicePlan": {
+        "type": "string",
+        "description": "Plano de serviço do tenant",
+        "enum": ["basic", "professional", "enterprise", "custom"]
+      },
+      "TenantStatus": {
+        "type": "string",
+        "description": "Status de um tenant no sistema",
+        "enum": ["ACTIVE", "SUSPENDED", "INACTIVE", "TRIAL", "PENDING"]
+      },
+      "TenantSummary": {
+        "type": "object",
+        "description": "Resumo de um tenant para listagem",
+        "required": ["id", "name", "status", "service_plan", "sip_domain", "active_extensions", "active_calls", "created_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID do tenant"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          },
+          "service_plan": {
+            "$ref": "#/components/schemas/ServicePlan"
+          },
+          "sip_domain": {
+            "type": "string",
+            "description": "Domínio SIP"
+          },
+          "active_extensions": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número de extensões ativas"
+          },
+          "active_calls": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Chamadas ativas no momento"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data de criação"
+          }
+        }
+      },
+      "UsageCosts": {
+        "type": "object",
+        "description": "Custos por categoria de uso",
+        "required": ["local_calls", "national_calls", "international_calls", "storage", "total", "currency"],
+        "properties": {
+          "local_calls": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de chamadas locais"
+          },
+          "national_calls": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de chamadas nacionais"
+          },
+          "international_calls": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de chamadas internacionais"
+          },
+          "storage": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de storage"
+          },
+          "total": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo total"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Moeda"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "tenants",
+      "description": "Tenant management endpoints"
+    },
+    {
+      "name": "sip-users",
+      "description": "SIP User management endpoints"
+    }
+  ]
+}

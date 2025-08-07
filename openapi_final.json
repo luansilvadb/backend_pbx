@@ -1,0 +1,3310 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Backend PBX API",
+    "description": "API REST para controle de chamadas VoIP via FreeSWITCH",
+    "contact": {
+      "name": "Backend PBX",
+      "email": "contato@backendpbx.com"
+    },
+    "license": {
+      "name": ""
+    },
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/api/sip/auth/{tenant_id}/{extension}": {
+      "post": {
+        "tags": [
+          "sip-auth"
+        ],
+        "summary": "Endpoint para autenticação SIP (usado pelo FreeSWITCH)",
+        "description": "Este endpoint é chamado pelo FreeSWITCH para validar credenciais",
+        "operationId": "authenticate_sip_user",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "extension",
+            "in": "path",
+            "description": "Número da extensão",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SipAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Autenticação bem-sucedida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipAuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Lista todos os tenants com paginação",
+        "operationId": "list_tenants",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Página (default: 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página (default: 20, max: 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtro por status (opcional)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Filtro por nome (busca parcial, opcional)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de tenants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Cria novo tenant",
+        "operationId": "create_tenant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Tenant criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tenant já existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/validate/{tenant_id}": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Valida se ID do tenant está disponível",
+        "operationId": "validate_tenant_id",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID do tenant a validar",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantValidationResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Obtém detalhes de um tenant específico",
+        "operationId": "get_tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Atualiza tenant existente",
+        "operationId": "update_tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tenant atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Remove tenant (soft delete)",
+        "operationId": "delete_tenant",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tenant removido com sucesso"
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/health": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Obtém status de saúde do tenant",
+        "operationId": "get_tenant_health",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status de saúde",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantHealthResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users": {
+      "get": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Lista usuários SIP de um tenant",
+        "operationId": "list_sip_users",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Página (default: 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página (default: 20, max: 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtro por status (opcional)",
+            "required": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SipUserStatus"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Busca por nome ou extensão (opcional)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuários SIP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipUserListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Cria novo usuário SIP",
+        "operationId": "create_sip_user",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSipUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário SIP criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Extensão já existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users/extension/{extension}": {
+      "get": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Obtém usuário SIP por extensão",
+        "operationId": "get_sip_user_by_extension",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "extension",
+            "in": "path",
+            "description": "Número da extensão",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do usuário SIP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipUserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users/registrations": {
+      "get": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Lista registros SIP ativos",
+        "operationId": "list_sip_registrations",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de registros SIP ativos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SipRegistrationInfo"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users/{user_id}": {
+      "get": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Obtém detalhes de um usuário SIP",
+        "operationId": "get_sip_user",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "ID único do usuário SIP",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do usuário SIP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipUserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Atualiza usuário SIP",
+        "operationId": "update_sip_user",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "ID único do usuário SIP",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSipUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Usuário SIP atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Remove usuário SIP",
+        "operationId": "delete_sip_user",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "ID único do usuário SIP",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Usuário SIP removido com sucesso"
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users/{user_id}/reset-password": {
+      "post": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Reset senha do usuário SIP",
+        "operationId": "reset_sip_user_password",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "ID único do usuário SIP",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Senha alterada com sucesso"
+          },
+          "400": {
+            "description": "Senha inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users/{user_id}/status": {
+      "post": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Altera status do usuário SIP",
+        "operationId": "set_sip_user_status",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "ID único do usuário SIP",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetUserStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Status alterado com sucesso"
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/sip-users/{user_id}/usage": {
+      "get": {
+        "tags": [
+          "sip-users"
+        ],
+        "summary": "Obtém estatísticas de uso de um usuário SIP",
+        "operationId": "get_sip_user_usage",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "ID único do usuário SIP",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estatísticas de uso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipUserUsageStats"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/stats": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Obtém estatísticas detalhadas do tenant",
+        "operationId": "get_tenant_detailed_stats",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estatísticas detalhadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantDetailedStats"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/status": {
+      "post": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Altera status do tenant (ativar/suspender/desativar)",
+        "operationId": "set_tenant_status",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTenantStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Status alterado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenants/{tenant_id}/usage": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Obtém estatísticas de uso do tenant",
+        "operationId": "get_tenant_usage",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "description": "ID único do tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estatísticas de uso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantUsage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calls": {
+      "get": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Lista todas as chamadas ativas",
+        "operationId": "list_calls",
+        "responses": {
+          "200": {
+            "description": "List of active calls",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Origina uma nova chamada",
+        "operationId": "originate_call",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OriginateCallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Call originated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Call"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FreeSWITCH unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calls/{id}": {
+      "get": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Obtém detalhes de uma chamada específica",
+        "operationId": "get_call",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Call ID",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Call details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Call"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Call not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calls/{id}/hangup": {
+      "post": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Encerra uma chamada",
+        "operationId": "hangup_call",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Call ID",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Call hung up successfully"
+          },
+          "404": {
+            "description": "Call not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/statistics": {
+      "get": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Obtém estatísticas do sistema",
+        "operationId": "get_statistics",
+        "responses": {
+          "200": {
+            "description": "System statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatisticsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status": {
+      "get": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Obtém status do sistema",
+        "operationId": "get_status",
+        "responses": {
+          "200": {
+            "description": "System status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatusResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health check endpoint",
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiErrorSchema": {
+        "type": "object",
+        "description": "Alias para ErrorResponse para compatibilidade OpenAPI",
+        "required": [
+          "error_code",
+          "message",
+          "timestamp"
+        ],
+        "properties": {
+          "details": {
+            "type": "string",
+            "description": "Detalhes adicionais (opcional)",
+            "nullable": true
+          },
+          "error_code": {
+            "type": "string",
+            "description": "Código do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem de erro"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          }
+        }
+      },
+      "ApplicationInfo": {
+        "type": "object",
+        "description": "Informações da aplicação",
+        "required": [
+          "name",
+          "version",
+          "environment",
+          "server"
+        ],
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "Ambiente"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome da aplicação"
+          },
+          "server": {
+            "$ref": "#/components/schemas/ServerInfo"
+          },
+          "version": {
+            "type": "string",
+            "description": "Versão"
+          }
+        }
+      },
+      "Call": {
+        "type": "object",
+        "description": "Informações completas de uma chamada",
+        "required": [
+          "id",
+          "from",
+          "to",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "answered_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            ],
+            "nullable": true
+          },
+          "context": {
+            "type": "string",
+            "description": "Contexto do dialplan",
+            "nullable": true
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Duração em segundos (calculada)",
+            "nullable": true,
+            "minimum": 0
+          },
+          "ended_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            ],
+            "nullable": true
+          },
+          "from": {
+            "type": "string",
+            "description": "Número/ramal de origem"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          },
+          "to": {
+            "type": "string",
+            "description": "Número/ramal de destino"
+          }
+        }
+      },
+      "CallListResponse": {
+        "type": "object",
+        "description": "Response para listagem de chamadas",
+        "required": [
+          "calls",
+          "total"
+        ],
+        "properties": {
+          "calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Call"
+            },
+            "description": "Lista de chamadas"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total de chamadas ativas",
+            "minimum": 0
+          }
+        }
+      },
+      "CallStatus": {
+        "type": "string",
+        "description": "Status de uma chamada",
+        "enum": [
+          "CREATING",
+          "RINGING",
+          "ANSWERED",
+          "CONNECTED",
+          "HANGUP",
+          "BUSY",
+          "FAILED"
+        ]
+      },
+      "CallSummary": {
+        "type": "object",
+        "description": "Resumo do status de uma chamada",
+        "required": [
+          "id",
+          "from",
+          "to",
+          "status"
+        ],
+        "properties": {
+          "duration_seconds": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Duração em segundos (se aplicável)",
+            "nullable": true,
+            "minimum": 0
+          },
+          "from": {
+            "type": "string",
+            "description": "Número/ramal de origem"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          },
+          "to": {
+            "type": "string",
+            "description": "Número/ramal de destino"
+          }
+        }
+      },
+      "CreateSipUserRequest": {
+        "type": "object",
+        "description": "Request para criar usuário SIP",
+        "required": [
+          "extension",
+          "display_name",
+          "password"
+        ],
+        "properties": {
+          "config": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SipUserConfig"
+              }
+            ],
+            "nullable": true
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Nome de exibição"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email (opcional)",
+            "nullable": true
+          },
+          "extension": {
+            "type": "string",
+            "description": "Número da extensão"
+          },
+          "limits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SipUserLimits"
+              }
+            ],
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha em texto claro (será criptografada)"
+          }
+        }
+      },
+      "CreateTenantRequest": {
+        "type": "object",
+        "description": "Request para criar novo tenant",
+        "required": [
+          "id",
+          "name",
+          "service_plan",
+          "sip_domain",
+          "contact"
+        ],
+        "properties": {
+          "config": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TenantConfigRequest"
+              }
+            ],
+            "nullable": true
+          },
+          "contact": {
+            "$ref": "#/components/schemas/TenantContact"
+          },
+          "custom_limits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TenantLimits"
+              }
+            ],
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "description": "ID do tenant (deve ser único)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome de exibição"
+          },
+          "service_plan": {
+            "$ref": "#/components/schemas/ServicePlan"
+          },
+          "sip_domain": {
+            "type": "string",
+            "description": "Domínio SIP"
+          }
+        }
+      },
+      "DateTime": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 date-time format",
+        "example": "2025-01-07T01:30:25.189834600Z"
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Response de erro padronizada da API",
+        "required": [
+          "error_code",
+          "message",
+          "timestamp"
+        ],
+        "properties": {
+          "details": {
+            "type": "string",
+            "description": "Detalhes adicionais (opcional)",
+            "nullable": true
+          },
+          "error_code": {
+            "type": "string",
+            "description": "Código do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem de erro"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "description": "Response do health check",
+        "required": [
+          "status",
+          "app_name",
+          "version",
+          "environment",
+          "timestamp"
+        ],
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Nome da aplicação"
+          },
+          "environment": {
+            "type": "string",
+            "description": "Ambiente"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status da aplicação"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          },
+          "version": {
+            "type": "string",
+            "description": "Versão da aplicação"
+          }
+        }
+      },
+      "OriginateCallRequest": {
+        "type": "object",
+        "description": "Request para originar uma nova chamada",
+        "required": [
+          "from",
+          "to"
+        ],
+        "properties": {
+          "context": {
+            "type": "string",
+            "description": "Contexto do dialplan (opcional)",
+            "nullable": true
+          },
+          "from": {
+            "type": "string",
+            "description": "Número/ramal de origem"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Timeout em segundos (opcional)",
+            "nullable": true,
+            "minimum": 0
+          },
+          "to": {
+            "type": "string",
+            "description": "Número/ramal de destino"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "description": "Request para alteração de senha",
+        "required": [
+          "new_password"
+        ],
+        "properties": {
+          "new_password": {
+            "type": "string",
+            "description": "Nova senha"
+          }
+        }
+      },
+      "ServerInfo": {
+        "type": "object",
+        "description": "Informações do servidor",
+        "required": [
+          "host",
+          "port"
+        ],
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Host"
+          },
+          "port": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Porta",
+            "minimum": 0
+          }
+        }
+      },
+      "ServicePlan": {
+        "type": "string",
+        "description": "Plano de serviço do tenant",
+        "enum": [
+          "basic",
+          "professional",
+          "enterprise",
+          "custom"
+        ]
+      },
+      "SetTenantStatusRequest": {
+        "type": "object",
+        "description": "Request para alterar status do tenant",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          }
+        }
+      },
+      "SetUserStatusRequest": {
+        "type": "object",
+        "description": "Request para alteração de status",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/SipUserStatus"
+          }
+        }
+      },
+      "SipAuthRequest": {
+        "type": "object",
+        "description": "Request de autenticação SIP",
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "IP de origem (opcional)",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha fornecida"
+          },
+          "user_agent": {
+            "type": "string",
+            "description": "User-Agent (opcional)",
+            "nullable": true
+          }
+        }
+      },
+      "SipAuthResponse": {
+        "type": "object",
+        "description": "Response de autenticação SIP",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Mensagem de resultado"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Se autenticação foi bem-sucedida"
+          }
+        }
+      },
+      "SipRegistrationInfo": {
+        "type": "object",
+        "description": "Informações de registro SIP em tempo real",
+        "required": [
+          "user_id",
+          "extension",
+          "is_registered"
+        ],
+        "properties": {
+          "contact": {
+            "type": "string",
+            "description": "Contato SIP",
+            "nullable": true
+          },
+          "expires": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Tempo de expiração do registro (segundos)",
+            "nullable": true,
+            "minimum": 0
+          },
+          "extension": {
+            "type": "string",
+            "description": "Extensão"
+          },
+          "ip_address": {
+            "type": "string",
+            "description": "IP de origem",
+            "nullable": true
+          },
+          "is_registered": {
+            "type": "boolean",
+            "description": "Se está registrado"
+          },
+          "registered_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            ],
+            "nullable": true
+          },
+          "user_agent": {
+            "type": "string",
+            "description": "User-Agent",
+            "nullable": true
+          },
+          "user_id": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      },
+      "SipUser": {
+        "type": "object",
+        "description": "Usuário SIP com extensão e credenciais",
+        "required": [
+          "id",
+          "tenant_id",
+          "extension",
+          "display_name",
+          "password_hash",
+          "status",
+          "config",
+          "limits",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/SipUserConfig"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Nome de exibição do usuário"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email do usuário (opcional)",
+            "nullable": true
+          },
+          "extension": {
+            "type": "string",
+            "description": "Número da extensão (ex: 1001, 1002)"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "last_ip": {
+            "type": "string",
+            "description": "IP do último registro",
+            "nullable": true
+          },
+          "last_registration": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            ],
+            "nullable": true
+          },
+          "last_user_agent": {
+            "type": "string",
+            "description": "User-Agent do último registro",
+            "nullable": true
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SipUserLimits"
+          },
+          "password_hash": {
+            "type": "string",
+            "description": "Senha SIP (criptografada)"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SipUserStatus"
+          },
+          "tenant_id": {
+            "type": "string",
+            "description": "ID do tenant ao qual pertence"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/DateTime"
+          }
+        }
+      },
+      "SipUserConfig": {
+        "type": "object",
+        "description": "Configurações específicas do usuário SIP",
+        "required": [
+          "preferred_codec",
+          "allow_external_calls",
+          "allow_transfers",
+          "allow_conferences",
+          "auto_record",
+          "registration_timeout",
+          "force_srtp",
+          "custom_variables"
+        ],
+        "properties": {
+          "allow_conferences": {
+            "type": "boolean",
+            "description": "Permitir conferências"
+          },
+          "allow_external_calls": {
+            "type": "boolean",
+            "description": "Permitir chamadas externas"
+          },
+          "allow_transfers": {
+            "type": "boolean",
+            "description": "Permitir transferências"
+          },
+          "auto_record": {
+            "type": "boolean",
+            "description": "Gravar chamadas por padrão"
+          },
+          "custom_context": {
+            "type": "string",
+            "description": "Context personalizado (se diferente do tenant)",
+            "nullable": true
+          },
+          "custom_variables": {
+            "type": "object",
+            "description": "Variables customizadas",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "force_srtp": {
+            "type": "boolean",
+            "description": "Usar SRTP (segurança)"
+          },
+          "preferred_codec": {
+            "type": "string",
+            "description": "Codec de áudio preferido"
+          },
+          "registration_timeout": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Timeout de registro (segundos)",
+            "minimum": 0
+          }
+        }
+      },
+      "SipUserLimits": {
+        "type": "object",
+        "description": "Limites específicos do usuário",
+        "required": [
+          "max_concurrent_calls",
+          "allow_international",
+          "allow_long_distance"
+        ],
+        "properties": {
+          "allow_international": {
+            "type": "boolean",
+            "description": "Permitir chamadas internacionais"
+          },
+          "allow_long_distance": {
+            "type": "boolean",
+            "description": "Permitir chamadas de longa distância"
+          },
+          "max_call_duration": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Duração máxima de chamada (segundos)",
+            "nullable": true,
+            "minimum": 0
+          },
+          "max_concurrent_calls": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Número máximo de chamadas simultâneas",
+            "minimum": 0
+          },
+          "monthly_minutes_limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Minutos mensais permitidos",
+            "nullable": true,
+            "minimum": 0
+          }
+        }
+      },
+      "SipUserListResponse": {
+        "type": "object",
+        "description": "Lista paginada de usuários SIP",
+        "required": [
+          "users",
+          "total",
+          "page",
+          "per_page",
+          "total_pages"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Página atual",
+            "minimum": 0
+          },
+          "per_page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Itens por página",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total de usuários",
+            "minimum": 0
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total de páginas",
+            "minimum": 0
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SipUserResponse"
+            },
+            "description": "Lista de usuários"
+          }
+        }
+      },
+      "SipUserResponse": {
+        "type": "object",
+        "description": "Response com informações do usuário (sem senha)",
+        "required": [
+          "id",
+          "tenant_id",
+          "extension",
+          "display_name",
+          "status",
+          "is_registered",
+          "config",
+          "limits",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/SipUserConfig"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Nome de exibição"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email",
+            "nullable": true
+          },
+          "extension": {
+            "type": "string",
+            "description": "Número da extensão"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "is_registered": {
+            "type": "boolean",
+            "description": "Se está registrado atualmente"
+          },
+          "last_ip": {
+            "type": "string",
+            "description": "IP do último registro",
+            "nullable": true
+          },
+          "last_registration": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            ],
+            "nullable": true
+          },
+          "last_user_agent": {
+            "type": "string",
+            "description": "User-Agent do último registro",
+            "nullable": true
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SipUserLimits"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SipUserStatus"
+          },
+          "tenant_id": {
+            "type": "string",
+            "description": "ID do tenant"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/DateTime"
+          }
+        }
+      },
+      "SipUserStatus": {
+        "type": "string",
+        "description": "Status do usuário SIP",
+        "enum": [
+          "active",
+          "inactive",
+          "suspended",
+          "blocked",
+          "pending"
+        ]
+      },
+      "SipUserUsageStats": {
+        "type": "object",
+        "description": "Estatísticas de uso do usuário SIP",
+        "required": [
+          "user_id",
+          "extension",
+          "total_calls",
+          "answered_calls",
+          "missed_calls",
+          "total_minutes",
+          "peak_concurrent_calls",
+          "period_start",
+          "period_end"
+        ],
+        "properties": {
+          "answered_calls": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Chamadas atendidas",
+            "minimum": 0
+          },
+          "extension": {
+            "type": "string",
+            "description": "Extensão"
+          },
+          "missed_calls": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Chamadas perdidas",
+            "minimum": 0
+          },
+          "peak_concurrent_calls": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Chamadas simultâneas máximas",
+            "minimum": 0
+          },
+          "period_end": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "period_start": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "total_calls": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total de chamadas no período",
+            "minimum": 0
+          },
+          "total_minutes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Minutos falados no período",
+            "minimum": 0
+          },
+          "user_id": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      },
+      "StatisticsResponse": {
+        "type": "object",
+        "description": "Response das estatísticas",
+        "required": [
+          "call_statistics",
+          "uptime_seconds",
+          "timestamp"
+        ],
+        "properties": {
+          "call_statistics": {
+            "type": "object",
+            "description": "Estatísticas de chamadas",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          },
+          "uptime_seconds": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Uptime em segundos",
+            "minimum": 0
+          }
+        }
+      },
+      "SystemStatusResponse": {
+        "type": "object",
+        "description": "Response do status do sistema",
+        "required": [
+          "status",
+          "freeswitch_connected",
+          "application",
+          "timestamp"
+        ],
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/ApplicationInfo"
+          },
+          "freeswitch_connected": {
+            "type": "boolean",
+            "description": "Status do FreeSWITCH"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status geral do sistema"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          }
+        }
+      },
+      "Tenant": {
+        "type": "object",
+        "description": "Informações completas de um tenant",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "service_plan",
+          "limits",
+          "config",
+          "contact",
+          "created_at",
+          "updated_at",
+          "metadata"
+        ],
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/TenantConfig"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/TenantContact"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "expires_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            ],
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "description": "ID único do tenant"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/TenantLimits"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Metadados adicionais",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome de exibição"
+          },
+          "service_plan": {
+            "$ref": "#/components/schemas/ServicePlan"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/DateTime"
+          }
+        }
+      },
+      "TenantConfig": {
+        "type": "object",
+        "description": "Configurações específicas do tenant",
+        "required": [
+          "sip_domain",
+          "default_context",
+          "recording_policy",
+          "presence_enabled",
+          "conference_settings",
+          "ivr_settings",
+          "timezone",
+          "billing_settings"
+        ],
+        "properties": {
+          "billing_settings": {
+            "$ref": "#/components/schemas/BillingSettings"
+          },
+          "conference_settings": {
+            "$ref": "#/components/schemas/ConferenceSettings"
+          },
+          "default_context": {
+            "type": "string",
+            "description": "Context padrão no dialplan"
+          },
+          "default_gateway": {
+            "type": "string",
+            "description": "Gateway padrão para chamadas externas",
+            "nullable": true
+          },
+          "ivr_settings": {
+            "$ref": "#/components/schemas/IvrSettings"
+          },
+          "presence_enabled": {
+            "type": "boolean",
+            "description": "Configurações de presença"
+          },
+          "recording_policy": {
+            "$ref": "#/components/schemas/RecordingPolicy"
+          },
+          "sip_domain": {
+            "type": "string",
+            "description": "Domínio SIP principal"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Timezone do tenant"
+          }
+        }
+      },
+      "TenantContact": {
+        "type": "object",
+        "description": "Informações de contato do tenant",
+        "required": [
+          "company_name",
+          "contact_name",
+          "email",
+          "phone",
+          "country"
+        ],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Endereço",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "description": "Cidade",
+            "nullable": true
+          },
+          "company_name": {
+            "type": "string",
+            "description": "Nome da empresa/organização"
+          },
+          "contact_name": {
+            "type": "string",
+            "description": "Nome do contato principal"
+          },
+          "country": {
+            "type": "string",
+            "description": "País"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email principal"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefone principal"
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "CEP",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "description": "Estado",
+            "nullable": true
+          }
+        }
+      },
+      "TenantDetailedStats": {
+        "type": "object",
+        "description": "Response com estatísticas detalhadas do tenant",
+        "required": [
+          "tenant_id",
+          "total_users",
+          "active_users",
+          "total_calls",
+          "total_minutes",
+          "peak_concurrent_calls",
+          "recording_storage_used",
+          "period_start",
+          "period_end",
+          "created_at"
+        ],
+        "properties": {
+          "active_users": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Usuários atualmente registrados",
+            "minimum": 0
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          },
+          "peak_concurrent_calls": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Pico de chamadas simultâneas",
+            "minimum": 0
+          },
+          "period_end": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          },
+          "period_start": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          },
+          "recording_storage_used": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Storage usado para gravações (MB)",
+            "minimum": 0
+          },
+          "tenant_id": {
+            "type": "string",
+            "description": "ID do tenant"
+          },
+          "total_calls": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total de chamadas no período",
+            "minimum": 0
+          },
+          "total_minutes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total de minutos no período",
+            "minimum": 0
+          },
+          "total_users": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total de usuários SIP criados",
+            "minimum": 0
+          }
+        }
+      },
+      "TenantHealthResponse": {
+        "type": "object",
+        "description": "Response para status de saúde do tenant",
+        "required": [
+          "tenant_id",
+          "is_active",
+          "is_healthy",
+          "active_calls",
+          "calls_limit",
+          "monthly_minutes_used",
+          "monthly_minutes_limit",
+          "storage_used_mb",
+          "storage_limit_mb",
+          "last_call_at"
+        ],
+        "properties": {
+          "active_calls": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Chamadas ativas no momento",
+            "minimum": 0
+          },
+          "calls_limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Limite de chamadas simultâneas",
+            "minimum": 0
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Se tenant está ativo"
+          },
+          "is_healthy": {
+            "type": "boolean",
+            "description": "Se tenant está saudável (dentro dos limites)"
+          },
+          "last_call_at": {
+            "$ref": "#/components/schemas/chrono.DateTime"
+          },
+          "monthly_minutes_limit": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Limite de minutos mensais",
+            "minimum": 0
+          },
+          "monthly_minutes_used": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Minutos usados no mês atual",
+            "minimum": 0
+          },
+          "storage_limit_mb": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Limite de storage (MB)",
+            "minimum": 0
+          },
+          "storage_used_mb": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Storage usado para gravações (MB)",
+            "minimum": 0
+          },
+          "tenant_id": {
+            "type": "string",
+            "description": "ID do tenant"
+          }
+        }
+      },
+      "TenantLimits": {
+        "type": "object",
+        "description": "Limites de recursos por tenant",
+        "required": [
+          "max_concurrent_calls",
+          "max_extensions",
+          "max_monthly_minutes",
+          "max_recording_storage_mb",
+          "max_conferences",
+          "max_queues",
+          "max_calls_per_minute"
+        ],
+        "properties": {
+          "max_calls_per_minute": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Taxa máxima de chamadas por minuto (rate limiting)",
+            "minimum": 0
+          },
+          "max_concurrent_calls": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Máximo de chamadas simultâneas",
+            "minimum": 0
+          },
+          "max_conferences": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Máximo de conferências simultâneas",
+            "minimum": 0
+          },
+          "max_extensions": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Máximo de ramais/extensões",
+            "minimum": 0
+          },
+          "max_monthly_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Minutos máximos por mês",
+            "minimum": 0
+          },
+          "max_queues": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Máximo de filas de atendimento",
+            "minimum": 0
+          },
+          "max_recording_storage_mb": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Espaço máximo para gravações (MB)",
+            "minimum": 0
+          }
+        }
+      },
+      "TenantListResponse": {
+        "type": "object",
+        "description": "Response de listagem de tenants",
+        "required": [
+          "tenants",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Página atual",
+            "minimum": 0
+          },
+          "per_page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Itens por página",
+            "minimum": 0
+          },
+          "tenants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TenantSummary"
+            },
+            "description": "Lista de tenants"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total de tenants",
+            "minimum": 0
+          }
+        }
+      },
+      "TenantStatus": {
+        "type": "string",
+        "description": "Status de um tenant no sistema",
+        "enum": [
+          "ACTIVE",
+          "SUSPENDED",
+          "INACTIVE",
+          "TRIAL",
+          "PENDING"
+        ]
+      },
+      "TenantSummary": {
+        "type": "object",
+        "description": "Resumo de um tenant para listagem",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "service_plan",
+          "sip_domain",
+          "active_extensions",
+          "active_calls",
+          "created_at"
+        ],
+        "properties": {
+          "active_calls": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Chamadas ativas no momento",
+            "minimum": 0
+          },
+          "active_extensions": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Número de extensões ativas",
+            "minimum": 0
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "id": {
+            "type": "string",
+            "description": "ID do tenant"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome"
+          },
+          "service_plan": {
+            "$ref": "#/components/schemas/ServicePlan"
+          },
+          "sip_domain": {
+            "type": "string",
+            "description": "Domínio SIP"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus"
+          }
+        }
+      },
+      "TenantUsage": {
+        "type": "object",
+        "description": "Estatísticas de uso do tenant",
+        "required": [
+          "tenant_id",
+          "period_start",
+          "period_end",
+          "total_calls",
+          "total_minutes",
+          "peak_concurrent_calls",
+          "answer_seizure_ratio",
+          "average_call_duration",
+          "recording_storage_used",
+          "costs"
+        ],
+        "properties": {
+          "answer_seizure_ratio": {
+            "type": "number",
+            "format": "double",
+            "description": "Taxa de atendimento (ASR)"
+          },
+          "average_call_duration": {
+            "type": "number",
+            "format": "double",
+            "description": "Duração média das chamadas (segundos)"
+          },
+          "costs": {
+            "$ref": "#/components/schemas/UsageCosts"
+          },
+          "peak_concurrent_calls": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Pico de chamadas simultâneas",
+            "minimum": 0
+          },
+          "period_end": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "period_start": {
+            "$ref": "#/components/schemas/DateTime"
+          },
+          "recording_storage_used": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Uso de storage para gravações (MB)",
+            "minimum": 0
+          },
+          "tenant_id": {
+            "type": "string",
+            "description": "ID do tenant"
+          },
+          "total_calls": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Chamadas realizadas no período",
+            "minimum": 0
+          },
+          "total_minutes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Minutos consumidos",
+            "minimum": 0
+          }
+        }
+      },
+      "TenantValidationResponse": {
+        "type": "object",
+        "description": "Response de validação de tenant",
+        "required": [
+          "tenant_id",
+          "is_available",
+          "is_valid_format",
+          "message"
+        ],
+        "properties": {
+          "is_available": {
+            "type": "boolean",
+            "description": "Se o ID está disponível"
+          },
+          "is_valid_format": {
+            "type": "boolean",
+            "description": "Se o formato é válido"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem de resultado"
+          },
+          "tenant_id": {
+            "type": "string",
+            "description": "ID do tenant validado"
+          }
+        }
+      },
+      "UpdateSipUserRequest": {
+        "type": "object",
+        "description": "Request para atualizar usuário SIP",
+        "properties": {
+          "config": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SipUserConfig"
+              }
+            ],
+            "nullable": true
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Novo nome de exibição",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "description": "Novo email",
+            "nullable": true
+          },
+          "limits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SipUserLimits"
+              }
+            ],
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "description": "Nova senha (se fornecida)",
+            "nullable": true
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SipUserStatus"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "UpdateTenantRequest": {
+        "type": "object",
+        "description": "Request para atualizar tenant",
+        "properties": {
+          "config": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TenantConfigRequest"
+              }
+            ],
+            "nullable": true
+          },
+          "contact": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TenantContact"
+              }
+            ],
+            "nullable": true
+          },
+          "expires_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            ],
+            "nullable": true
+          },
+          "limits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TenantLimits"
+              }
+            ],
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome de exibição",
+            "nullable": true
+          },
+          "service_plan": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServicePlan"
+              }
+            ],
+            "nullable": true
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TenantStatus"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "UsageCosts": {
+        "type": "object",
+        "description": "Custos por categoria de uso",
+        "required": [
+          "local_calls",
+          "national_calls",
+          "international_calls",
+          "storage",
+          "total",
+          "currency"
+        ],
+        "properties": {
+          "currency": {
+            "type": "string",
+            "description": "Moeda"
+          },
+          "international_calls": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de chamadas internacionais"
+          },
+          "local_calls": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de chamadas locais"
+          },
+          "national_calls": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de chamadas nacionais"
+          },
+          "storage": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo de storage"
+          },
+          "total": {
+            "type": "number",
+            "format": "double",
+            "description": "Custo total"
+          }
+        }
+      },
+      "Uuid": {
+        "type": "string",
+        "format": "uuid",
+        "description": "UUID v4 format",
+        "example": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "chrono.DateTime": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 date-time format (chrono)",
+        "example": "2025-01-07T01:30:25.189834600Z"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "calls",
+      "description": "Call management endpoints"
+    },
+    {
+      "name": "status",
+      "description": "System status endpoints"
+    },
+    {
+      "name": "tenants",
+      "description": "Multi-tenant management endpoints"
+    },
+    {
+      "name": "sip-users",
+      "description": "SIP user management endpoints"
+    },
+    {
+      "name": "sip-auth",
+      "description": "SIP authentication endpoints"
+    }
+  ]
+}
